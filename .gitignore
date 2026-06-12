@@ -1,0 +1,17 @@
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Confidential data
+.env
+
+# Python cache and logs
+__pycache__
+*.pyc
+logs/
+
+# Python settings
+.python-version
+ruff.toml
