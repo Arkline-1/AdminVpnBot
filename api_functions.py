@@ -37,7 +37,7 @@ def get_session(base_url: str, username: str, password: str) -> requests.Session
     return None
 
 
-# Получаем список пользователей
+# Функция для получения списка пользователей
 
 def get_user_list(base_url: str, session: requests.Session):
     result = []
