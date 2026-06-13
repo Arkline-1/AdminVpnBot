@@ -252,3 +252,27 @@ def restart_xray_service(session: requests.Session) -> str:
         pass
     
     return "Произошла ошибка, xray не обновлен"
+
+
+# Функция для обновления Geofiles
+
+def update_geofile(session: requests.Session) -> str:
+    url = f"{BASE_URL}/panel/api/server/updateGeofile"
+
+    try:
+        response = session.post(url)
+
+        if response:
+            answer = response.json()
+
+            if answer["success"]:
+                return "Geofile успешно обновлен"
+        else:
+            # Тут сделать логи и записать в них response.status_code
+            pass
+
+    except Exception:
+        # Тут сделать логи и записать в них Exception
+        pass
+
+    return "Произошла ошибка, не получилось обновить geofile"
