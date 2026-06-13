@@ -129,3 +129,78 @@ def add_user(session: requests.Session, comment: str) -> str:
         pass
 
     return "Произошла ошибка, клиент не добавлен"
+
+
+# Функция для просмотра состояния сервера
+
+def server_status(session: requests.Session):
+    # Функция для перевода бит в гигабайты
+    def byte_to_gb(x: int) -> str:
+        result = x / (1024**3)
+        return f"{result:.2f}"
+
+    url = f"{BASE_URL}/api/server/status"
+
+    try:
+        response = session.get(url)
+        
+        if response:
+            answer = response.json()
+
+            if answer["success"]:
+                data = answer["obj"]
+
+                ip = data["publicIP"]["ipv4"]
+
+                cpu = f"{data['cpu']:.1f}"
+                cpu_cores = f"{data['cpuCores']}"
+
+                current_mem = byte_to_gb(data["mem"]["current"])
+                total_mem = byte_to_gb(data["mem"]["total"])
+
+                current_swap = byte_to_gb(data["swap"]["current"])
+                total_swap = byte_to_gb(data["swap"]["total"])
+
+                current_disk = byte_to_gb(data["disk"]["current"])
+                total_disk = byte_to_gb(data["disk"]["total"])
+
+                total_send  = byte_to_gb(data["netTraffic"]["sent"])
+                total_get = byte_to_gb(data["netTraffic"]["recv"])
+
+                panel_version = data["panelVersion"]
+
+                xray_status = data["xray"]["state"]
+                xray_version = data["xray"]["version"]
+
+                result = f"""
+                    #================================================#
+                    IP:             {ip}
+                    #================================================#
+                    CPU:            {cpu}% ({cpu_cores} Core)
+                    MEMORY:         {current_mem}/{total_mem} GB
+                    SWAP:           {current_swap}/{total_swap} GB
+                    DISK:           {current_disk}/{total_disk} GB
+                    #================================================#
+                    TOTAL SEND:     {total_send} GB
+                    TOTAL GET:      {total_get} GB
+                    #================================================#
+                    PANEL VERSION:  {panel_version}
+                    #================================================#
+                    XRAY STATUS:    {xray_status}
+                    XRAY VERSION:   {xray_version}
+                    #================================================#
+                """
+
+                return result
+            else:
+                pass
+        else:
+            # Тут сделать логи и записать в них response.status_code
+            pass
+
+
+    except Exception:
+        # Тут сделать логи и записать в них Exception
+        pass
+
+    return "Произошла ошибка, невозможно узнать состояние сервера"
