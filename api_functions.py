@@ -5,7 +5,7 @@ from datetime import datetime
 import requests
 from zoneinfo import ZoneInfo
 
-from setup import BASE_URL
+from setup import BASE_URL, LIMIT_IP, TOTAL_GB, INBOUNDS_IDS
 
 
 # Функция для создания сессии
@@ -80,24 +80,34 @@ def get_user_list(session: requests.Session) -> list[str]:
 # Функция для добавления нового пользователя
 
 def add_user(session: requests.Session, comment: str) -> str:
+    # Функция, генерирующая email
+    def create_email(session: requests.Session) -> str:
+        prefix = "user"
+        total_users = len(get_user_list(session))
+
+        if total_users <= 9:
+            id = f"0{total_users}"
+        else:
+            id = str(total_users)
+        
+        email = f"{prefix}_{id}"
+        return email
+        
+
     url = f"{BASE_URL}/api/clients/add"
 
     payload = {
         "client": {
-            "email": "alice@example.com",
-            "totalGB": 0,
+            "email": create_email(session),
+            "totalGB": TOTAL_GB,
             "expiryTime": 0,
             "tgId": 0,
-            "limitIp": 1,
+            "limitIp": LIMIT_IP,
             "enable": True,
             "comment": comment
 
         },
-        "inboundIds": [
-            1,
-            2,
-            3
-        ]
+        "inboundIds": INBOUNDS_IDS
     }
 
     try:
