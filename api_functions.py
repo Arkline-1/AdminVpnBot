@@ -204,3 +204,27 @@ def server_status(session: requests.Session):
         pass
 
     return "Произошла ошибка, невозможно узнать состояние сервера"
+
+
+# Функция для обновления web-панели
+
+def update_panel(session: requests.Session) -> str:
+    url = f"{BASE_URL}/api/server/updatePanel"
+
+    try:
+        response = session.post(url)
+
+        if response:
+            answer = response.json()
+
+            if answer["success"]:
+                return "Панель успешно обновлена"
+        else:
+            # Тут сделать логи и записать в них response.status_code
+            pass
+
+    except Exception:
+        # Тут сделать логи и записать в них Exception
+        pass
+
+    return "Произошла ошибка, панель не была обновлена"
