@@ -206,7 +206,7 @@ def server_status(session: requests.Session):
     return "Произошла ошибка, невозможно узнать состояние сервера"
 
 
-# Функция для обновления web-панели
+# Функция для обновления Web-панели
 
 def update_panel(session: requests.Session) -> str:
     url = f"{BASE_URL}/api/server/updatePanel"
@@ -218,7 +218,7 @@ def update_panel(session: requests.Session) -> str:
             answer = response.json()
 
             if answer["success"]:
-                return "Панель успешно обновлена"
+                return "Панель успешно обновлена!"
         else:
             # Тут сделать логи и записать в них response.status_code
             pass
@@ -228,3 +228,27 @@ def update_panel(session: requests.Session) -> str:
         pass
 
     return "Произошла ошибка, панель не была обновлена"
+
+
+# Функия для обновления xray
+
+def restart_xray_service(session: requests.Session) -> str:
+    url = f"{BASE_URL}/panel/api/server/restartXrayService"
+
+    try:
+        response = session.post(url)
+
+        if response:
+            answer = response.json()
+
+            if answer["success"]:
+                return "xray успешно обновлен!"
+        else:
+            # Тут сделать логи и записать в них response.status_code
+            pass
+
+    except Exception:
+        # Тут сделать логи и записать в них Exception
+        pass
+    
+    return "Произошла ошибка, xray не обновлен"
