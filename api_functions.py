@@ -5,17 +5,19 @@ from datetime import datetime
 import requests
 from zoneinfo import ZoneInfo
 
+from setup import BASE_URL
+
 
 # Функция для создания сессии
 
-def get_session(base_url: str, username: str, password: str) -> requests.Session | None:
+def get_session(username: str, password: str) -> requests.Session | None:
     session = requests.Session()
 
     payload = {
         "username": username,
         "password": password
     }
-    url = f"{base_url}/login"
+    url = f"{BASE_URL}/login"
 
     try:
         response = session.post(url, json=payload)
@@ -39,9 +41,9 @@ def get_session(base_url: str, username: str, password: str) -> requests.Session
 
 # Функция для получения списка пользователей
 
-def get_user_list(base_url: str, session: requests.Session):
+def get_user_list(session: requests.Session):
     result = []
-    url = f"{base_url}/panel/api/clients/list"
+    url = f"{BASE_URL}/panel/api/clients/list"
 
 
     try:
@@ -73,6 +75,3 @@ def get_user_list(base_url: str, session: requests.Session):
         pass
 
     return None
-
-
-# ...
