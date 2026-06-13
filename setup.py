@@ -16,6 +16,10 @@ BASE_URL = os.getenv("BASE_URL")
 USERNAME = os.getenv("USERNAME")
 PASSWORD = os.getenv("PASSWORD")
 
+LIMIT_IP = os.getenv("LIMIT_IP")
+TOTAL_GB = os.getenv("TOTAL_GB")
+INBOUNDS_IDS = os.getenv("INBOUNDS_IDS").split(",")
+
 
 # Создание необходимой файловой структуры (логи)
 
