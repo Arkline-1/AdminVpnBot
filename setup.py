@@ -1,7 +1,8 @@
 # Импорт необходимых библиотек
 
+from aiogram import Bot, Dispatcher
 from dotenv import load_dotenv
-# import logging
+import logging
 import os
 import sys
 
@@ -35,4 +36,23 @@ os.makedirs("logs/", exist_ok=True)
 # Заготовка для функции для настройки логирования
 
 def init_logging():
-    pass
+    logging.basicConfig(
+        level = logging.INFO,                                                 # Будет логироваться все начиная с уровня INFO
+        format = "%(asctime)s [%(levelname)s] %(name)s: %(message)s",         # Формат
+        datefmt = "%Y-%m-%d %H:%M:%S",                                        # Формат %(asctime)s
+        handlers = [
+            logging.StreamHandler(sys.stdout), 
+            logging.FileHandler("logs/programm.log", encoding="utf-8") 
+        ]                                                                     # Все места куда выводятся логи: консоль и файл programm.log
+    )
+
+
+# Инициализация телеграм бота
+bot = Bot(token=TG_TOKEN)
+dp = Dispatcher()
+
+
+# Вызов логирования (чтобы сразу работал при импорте)
+init_logging()
+logger = logging.getLogger(__name__)
+logger.info("Конфигурация и логирование успешно инициализированны")
