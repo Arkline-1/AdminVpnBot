@@ -137,7 +137,6 @@ def delete_user(session: requests.Session, email: str) -> str:
     # Функция для проверки существования email
     def check(session: requests.Session, email: str) -> bool:
         url = f"{BASE_URL}/panel/api/clients/list"
-        emails = []
 
         try:
             response = session.get(url)
