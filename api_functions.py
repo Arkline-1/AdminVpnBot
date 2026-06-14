@@ -131,6 +131,56 @@ def add_user(session: requests.Session, comment: str) -> str:
     return "Произошла ошибка, клиент не добавлен"
 
 
+# Функция для удаления пользователя по его email
+
+def delete_user(session: requests.Session, email: str) -> str:
+    # Функция для проверки существования email
+    def check(session: requests.Session, email: str) -> bool:
+        url = f"{BASE_URL}/panel/api/clients/list"
+        emails = []
+
+        try:
+            response = session.get(url)
+
+            if response:
+                answer = response.json()
+                objects = answer["obj"]
+
+                for object in objects:
+                    if email == object["email"]:
+                        return True
+            else:
+                # Тут сделать логи и записать в них response.status_code
+                pass
+
+        except Exception:
+            # Тут сделать логи и записать в них Exception
+            pass
+
+        return False
+    
+    if check(session, email):
+        url = f"{BASE_URL}/panel/api/clients/del/{email}?keepTraffic=1"
+
+        try:
+            response = session.post(url)
+
+            if response:
+                answer = response.json()
+
+                if answer["success"]:
+                    return f"Клиент '{email}'удален"                
+            else:
+                # Тут сделать логи и записать в них response.status_code
+                pass
+
+        except Exception:
+            # Тут сделать логи и записать в них Exception
+            return "Произошла ошибка, пользователь не был удален"
+    
+    return f"Данного email '{email}' не существует!"
+
+
 # Функция для просмотра состояния сервера
 
 def server_status(session: requests.Session):
