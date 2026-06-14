@@ -1,7 +1,9 @@
 # Импорт необходимых библиотек
 
 from datetime import datetime
+import inspect
 #import logging
+import random
 import requests
 from zoneinfo import ZoneInfo
 
@@ -20,13 +22,15 @@ def get_session(username: str, password: str) -> requests.Session | None:
     url = f"{BASE_URL}/login"
 
     try:
-        response = session.post(url, json=payload)
+        response = session.post(url, json=payload, timeout=10)
 
-        if response:
+        if response.status_code == 200:
             answer = response.json()
+            success = answer.get("success", False)
+            # msg = answer.get("msg", "Нет ответа от сервера")
             # Тут сделать логи и записать в них answer["msg"]
 
-            if answer["success"]:
+            if success:
                 return session
         else:
             # Тут сделать логи и записать в них response.status_code
@@ -41,28 +45,34 @@ def get_session(username: str, password: str) -> requests.Session | None:
 
 # Функция для получения списка пользователей
 
-def get_user_list(session: requests.Session) -> list[str]:
+def get_user_list(session: requests.Session) -> list[str] | None:
     result = []
     url = f"{BASE_URL}/panel/api/clients/list"
 
 
     try:
-        response = session.get(url)
+        response = session.get(url, timeout=10)
 
-        if response:
+        if response.status_code == 200:
             answer = response.json()
+            elements = answer.get("obj")
+            if not elements:
+                return []
 
-            for element in answer["obj"]:
-                id = element["id"]
-                email = element["email"]
-                comment = element["comment"]
-                if element["traffic"]["lastOnline"]:
-                    last_online_int = datetime.fromtimestamp(element["traffic"]["lastOnline"] / 1000.0, tz=ZoneInfo("Europe/Moscow"))
+            for element in elements:
+                client_id = element.get("id", "id Неизвестен")
+                email = element.get("email", "email Неизвестен")
+                comment = element.get("comment", "comment Неизвестен")
+
+                traffic = element.get("traffic", {})
+                lastOnline = traffic.get("lastOnline") if traffic else None
+                if lastOnline:
+                    last_online_int = datetime.fromtimestamp(lastOnline / 1000.0, tz=ZoneInfo("Europe/Moscow"))
                     last_online = last_online_int.strftime("%d.%m.%Y %H:%M:%S")
                 else:
                     last_online = "Никогда"
                 
-                string = f"({id}) [{email}] -- '{comment}', последний раз в сети: {last_online}"
+                string = f"({client_id}) [{email}] -- '{comment}', последний раз в сети: {last_online}"
                 result.append(string)
             
             return result
@@ -81,16 +91,16 @@ def get_user_list(session: requests.Session) -> list[str]:
 
 def add_user(session: requests.Session, comment: str) -> str:
     # Функция, генерирующая email
-    def create_email(session: requests.Session) -> str:
+    def create_email() -> str:
         prefix = "user"
-        total_users = len(get_user_list(session))
 
-        if total_users <= 9:
-            id = f"0{total_users}"
-        else:
-            id = str(total_users)
+        let1 = chr(random.randint(97, 122))
+        ch1 = random.randint(0, 9)
+        let2 = chr(random.randint(97, 122))
+        ch2 = random.randint(0, 9)
+        random_id = f"{let1}{ch1}{let2}{ch2}"
         
-        email = f"{prefix}_{id}"
+        email = f"{prefix}_{random_id}"
         return email
         
 
@@ -98,7 +108,7 @@ def add_user(session: requests.Session, comment: str) -> str:
 
     payload = {
         "client": {
-            "email": create_email(session),
+            "email": create_email(),
             "totalGB": TOTAL_GB,
             "expiryTime": 0,
             "tgId": 0,
@@ -115,8 +125,11 @@ def add_user(session: requests.Session, comment: str) -> str:
 
         if response:
             answer = response.json()
+            success = answer.get("success", False)
+            # msg = answer.get("msg", "Нет ответа от сервера")
+            # Написать msg в логи
 
-            if answer["success"]:
+            if success:
                 return "Клиент добавлен"
             else:
                 pass
@@ -139,14 +152,14 @@ def delete_user(session: requests.Session, email: str) -> str:
         url = f"{BASE_URL}/panel/api/clients/list"
 
         try:
-            response = session.get(url)
+            response = session.get(url, timeout=10)
 
-            if response:
+            if response.status_code == 200:
                 answer = response.json()
-                objects = answer["obj"]
+                elements = answer.get("obj", [])
 
-                for object in objects:
-                    if email == object["email"]:
+                for element in elements:
+                    if email == element.get("email", False) and email:
                         return True
             else:
                 # Тут сделать логи и записать в них response.status_code
@@ -162,12 +175,15 @@ def delete_user(session: requests.Session, email: str) -> str:
         url = f"{BASE_URL}/panel/api/clients/del/{email}?keepTraffic=1"
 
         try:
-            response = session.post(url)
+            response = session.post(url, timeout=10)
 
-            if response:
+            if response.status_code == 200:
                 answer = response.json()
+                success = answer.get("success", False)
+                # msg = answer.get("msg", "Нет ответа от сервера")
+                # Написать msg в логи
 
-                if answer["success"]:
+                if success:
                     return f"Клиент '{email}'удален"                
             else:
                 # Тут сделать логи и записать в них response.status_code
@@ -182,44 +198,55 @@ def delete_user(session: requests.Session, email: str) -> str:
 
 # Функция для просмотра состояния сервера
 
-def server_status(session: requests.Session):
+def server_status(session: requests.Session) -> str:
     # Функция для перевода бит в гигабайты
     def byte_to_gb(x: int) -> str:
-        result = x / (1024**3)
-        return f"{result:.2f}"
+        try:
+            result = x / (1024**3)
+            return f"{result:.2f}"
+        except Exception:
+            return "Произошла ошибка"
 
     url = f"{BASE_URL}/api/server/status"
 
     try:
-        response = session.get(url)
+        response = session.get(url, timeout=10)
         
         if response:
             answer = response.json()
+            success = answer.get("success", False)
+            # msg = answer.get("msg", "Нет ответа от сервера")
+            # Написать msg в логи
 
-            if answer["success"]:
+            if success:
                 data = answer["obj"]
 
-                ip = data["publicIP"]["ipv4"]
+                ip = data.get("publicIP", {}).get("ipv4", "IP не найден")
 
-                cpu = f"{data['cpu']:.1f}"
-                cpu_cores = f"{data['cpuCores']}"
+                cpu = f"{data.get('cpu', 0.00):.1f}"
+                cpu_cores = f"{data.get('cpuCores', 0)}"
 
-                current_mem = byte_to_gb(data["mem"]["current"])
-                total_mem = byte_to_gb(data["mem"]["total"])
+                mem = data.get("mem", {})
+                current_mem = byte_to_gb(mem.get("current", 0))
+                total_mem = byte_to_gb(mem.get("total", 0))
 
-                current_swap = byte_to_gb(data["swap"]["current"])
-                total_swap = byte_to_gb(data["swap"]["total"])
+                swap = data.get("swap", {})
+                current_swap = byte_to_gb(swap.get("current", 0))
+                total_swap = byte_to_gb(swap.get("total", 0))
 
-                current_disk = byte_to_gb(data["disk"]["current"])
-                total_disk = byte_to_gb(data["disk"]["total"])
+                disk = data.get("disk", {})
+                current_disk = byte_to_gb(disk.get("current", 0))
+                total_disk = byte_to_gb(disk.get("total", 0))
 
-                total_send  = byte_to_gb(data["netTraffic"]["sent"])
-                total_get = byte_to_gb(data["netTraffic"]["recv"])
+                net_traffic = data.get("netTraffic", {})
+                total_send  = byte_to_gb(net_traffic.get("sent", 0))
+                total_get = byte_to_gb(net_traffic.get("recv", 0))
 
-                panel_version = data["panelVersion"]
+                panel_version = data.get("panelVersion", "0.00.00")
 
-                xray_status = data["xray"]["state"]
-                xray_version = data["xray"]["version"]
+                xray = data.get("xray", {})
+                xray_status = xray.get("state", "---")
+                xray_version = xray.get("version", "0.00.00")
 
                 result = f"""
                     #================================================#
@@ -240,7 +267,7 @@ def server_status(session: requests.Session):
                     #================================================#
                 """
 
-                return result
+                return inspect.cleandoc(result)
             else:
                 pass
         else:
@@ -261,12 +288,15 @@ def update_panel(session: requests.Session) -> str:
     url = f"{BASE_URL}/api/server/updatePanel"
 
     try:
-        response = session.post(url)
+        response = session.post(url, timeout=10)
 
-        if response:
+        if response.status_code == 200:
             answer = response.json()
+            success = answer.get("success", False)
+            # msg = answer.get("msg", "Нет ответа от сервера")
+            # Написать msg в логи
 
-            if answer["success"]:
+            if success:
                 return "Панель успешно обновлена!"
         else:
             # Тут сделать логи и записать в них response.status_code
@@ -285,13 +315,16 @@ def restart_xray_service(session: requests.Session) -> str:
     url = f"{BASE_URL}/panel/api/server/restartXrayService"
 
     try:
-        response = session.post(url)
+        response = session.post(url, timeout=10)
 
-        if response:
+        if response.status_code == 200:
             answer = response.json()
+            success = answer.get("success", False)
+            # msg = answer.get("msg", "Нет ответа от сервера")
+            # Написать msg в логи
 
-            if answer["success"]:
-                return "xray успешно обновлен!"
+            if success:
+                return "xray успешно перезапущен!"
         else:
             # Тут сделать логи и записать в них response.status_code
             pass
@@ -300,7 +333,7 @@ def restart_xray_service(session: requests.Session) -> str:
         # Тут сделать логи и записать в них Exception
         pass
     
-    return "Произошла ошибка, xray не обновлен"
+    return "Произошла ошибка, xray не был перезапущен"
 
 
 # Функция для обновления Geofiles
@@ -309,12 +342,15 @@ def update_geofile(session: requests.Session) -> str:
     url = f"{BASE_URL}/panel/api/server/updateGeofile"
 
     try:
-        response = session.post(url)
+        response = session.post(url, timeout=30)
 
-        if response:
+        if response.status_code == 200:
             answer = response.json()
+            success = answer.get("success", False)
+            # msg = answer.get("msg", "Нет ответа от сервера")
+            # Написать msg в логи
 
-            if answer["success"]:
+            if success:
                 return "Geofile успешно обновлен"
         else:
             # Тут сделать логи и записать в них response.status_code
