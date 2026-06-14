@@ -20,6 +20,8 @@ try:
     USERNAME = os.getenv("USERNAME")
     PASSWORD = os.getenv("PASSWORD")
 
+    ADMIN_IPS = list(map(int, os.getenv("ADMIN_IPS").split(",")))
+
     LIMIT_IP = int(os.getenv("LIMIT_IP"))
     TOTAL_GB = int(os.getenv("TOTAL_GB"))
     INBOUNDS_IDS = os.getenv("INBOUNDS_IDS").split(",")
